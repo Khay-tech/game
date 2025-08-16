@@ -142,7 +142,7 @@
     const stats = { 1: {truth:0, dare:0}, 2: {truth:0, dare:0} };
 
     // --- Socket.IO setup ---
-    const socket = io("https://tod-server.onrender.com"); // change to your server URL when deployed
+    const socket = io("https://game-bwic.onrender.com"); // change to your server URL when deployed
     const roomId = "room1"; // can be dynamic (e.g. code sharing)
 
     socket.emit("joinRoom", roomId);
@@ -261,4 +261,5 @@
   </script>
 </body>
 </html>
+
 
