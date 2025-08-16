@@ -1,37 +1,41 @@
+// server.js
 import express from "express";
-import http from "http";
+import { createServer } from "http";
 import { Server } from "socket.io";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } }); // allow frontend
+const httpServer = createServer(app);
+const io = new Server(httpServer, { cors: { origin: "*" } });
+
+const PORT = process.env.PORT || 3000;
+
+// serve index.html
+app.use(express.static(__dirname));
 
 io.on("connection", (socket) => {
-  console.log("Player connected:", socket.id);
-
   socket.on("joinRoom", (roomId) => {
-    const room = io.sockets.adapter.rooms.get(roomId) || new Set();
-    if (room.size >= 2) {
+    const room = io.sockets.adapter.rooms.get(roomId);
+    if (room && room.size >= 2) {
       socket.emit("roomFull");
-      return;
+    } else {
+      socket.join(roomId);
     }
-    socket.join(roomId);
-    socket.emit("joined", { player: room.size });
-    io.to(roomId).emit("playerCount", room.size);
   });
 
-  socket.on("spin", (data) => {
-    io.to(data.roomId).emit("spinResult", data);
+  socket.on("spin", ({ roomId, rotation, outcome, player }) => {
+    socket.to(roomId).emit("spinResult", { rotation, outcome, player });
   });
 
   socket.on("reset", (roomId) => {
     io.to(roomId).emit("resetGame");
   });
-
-  socket.on("disconnect", () => {
-    console.log("Player disconnected:", socket.id);
-  });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+httpServer.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
